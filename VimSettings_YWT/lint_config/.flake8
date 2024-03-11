@@ -1,0 +1,9 @@
+[flake8]
+# max-line-length = 125  # uncomment this if need to adjust max-line-length
+extend-ignore =
+    # ref: https://flake8.pycqa.org/en/latest/user/configuration.html#project-configuration
+    # E203: whitespace before ':'
+    # unexpected indentation (comment)
+    E116,
+    # line too long
+    E501,

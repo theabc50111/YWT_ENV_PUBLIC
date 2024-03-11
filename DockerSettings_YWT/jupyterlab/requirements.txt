@@ -1,0 +1,10 @@
+jupyterlab
+jupyterlab-vim
+ipython
+ipython-autotime
+ipympl
+pylint
+flake8
+pep8-naming
+pycodestyle_magic
+isort
