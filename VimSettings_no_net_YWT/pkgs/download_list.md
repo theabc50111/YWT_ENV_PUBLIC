@@ -6,7 +6,7 @@
 - `ale`: Clone from https://github.com/dense-analysis/ale.git, Rename to `ale`, Move to `./`
 - `vim-lsp`: Clone from https://github.com/prabirshrestha/vim-lsp, Rename to `vim-lsp`, Move to `./`
 - `vim-lsp-ale`: Clone from https://github.com/rhysd/vim-lsp-ale, Rename to `vim-lsp-ale`, Move to `./`
-- `vista`: Clone from https://github.com/liuchengxu/vista.vim, Rename to `vista`, Move to `./`
+- `vista`: Clone from https://github.com/liuchengxu/vista.vim, Rename to `vista.vim`, Move to `./`
 - `vim-airline`: Clone from https://github.com/vim-airline/vim-airline.git, Rename to `vim-airline`, Move to `./`
 - `vim-airline-themes`: Clone from https://github.com/vim-airline/vim-airline-themes.git, Rename to `vim-airline-themes`, Move to `./`
 - `git-lens.vim`: Clone from https://github.com/Eliot00/git-lens.vim, Rename to `ale`, Move to `./`

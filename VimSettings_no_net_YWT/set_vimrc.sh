@@ -99,8 +99,12 @@ cp -rf $PWD/.vimrc ~
 cp -rf $PWD/lint_config ~/.config
 cp -rf $PWD/pkgs/plug.vim ~/.vim/autoload
 cp -rf $PWD/pkgs/dracula ~/.vim/plugged
+cp -rf $PWD/pkgs/ale ~/.vim/plugged
+cp -rf $PWD/pkgs/vim-lsp ~/.vim/plugged
+cp -rf $PWD/pkgs/vista.vim ~/.vim/plugged
+cp -rf $PWD/pkgs/vim-lsp-ale ~/.vim/plugged
 cp -rf $PWD/pkgs/vim-airline ~/.vim/plugged
 cp -rf $PWD/pkgs/vim-airline-themes ~/.vim/plugged
-cp -rf $PWD/pkgs/tagbar ~/.vim/plugged
-cp -rf $PWD/pkgs/ale ~/.vim/plugged
+cp -rf $PWD/pkgs/vim-hocon ~/.vim/plugged
+cp -rf $PWD/pkgs/vim-jsonpath ~/.vim/plugged
 echo "Finish!!!!!!!!!!!!!!!!"
