@@ -84,9 +84,9 @@ Plug '~/.vim/plugged/vim-lsp-ale'  " The bridge plugin
 Plug '~/.vim/plugged/vista.vim'
 Plug '~/.vim/plugged/vim-airline'
 Plug '~/.vim/plugged/vim-airline-themes'
-Plug '~/.vim/plugged/git-lens.vim'  " git-lens.vim fit to Vim 9.0 and upper, For older Vim, you might want to use zivyangll / git-blame.vim (https://github.com/zivyangll/git-blame.vim)
+Plug '~/.vim/plugged/git-blame.vim'  " For newer vim(above 9.0), you might want to use Eliot00/git-lens.vim(https://github.com/Eliot00/git-lens.vim), Plug ~/.vim/plugged/git-lens.vim
 Plug '~/.vim/plugged/vim-hocon'
-Plug '~/.vim/vim-jsonpath'
+Plug '~/.vim/plugged/vim-jsonpath'
 call plug#end()
 
 

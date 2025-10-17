@@ -6,9 +6,10 @@
 - `ale`: Clone from https://github.com/dense-analysis/ale.git, Rename to `ale`, Move to `./`
 - `vim-lsp`: Clone from https://github.com/prabirshrestha/vim-lsp, Rename to `vim-lsp`, Move to `./`
 - `vim-lsp-ale`: Clone from https://github.com/rhysd/vim-lsp-ale, Rename to `vim-lsp-ale`, Move to `./`
-- `vista`: Clone from https://github.com/liuchengxu/vista.vim, Rename to `vista.vim`, Move to `./`
+- `vista.vim`: Clone from https://github.com/liuchengxu/vista.vim, Rename to `vista.vim`, Move to `./`
 - `vim-airline`: Clone from https://github.com/vim-airline/vim-airline.git, Rename to `vim-airline`, Move to `./`
 - `vim-airline-themes`: Clone from https://github.com/vim-airline/vim-airline-themes.git, Rename to `vim-airline-themes`, Move to `./`
-- `git-lens.vim`: Clone from https://github.com/Eliot00/git-lens.vim, Rename to `ale`, Move to `./`
+- `git-lens.vim`: Clone from https://github.com/Eliot00/git-lens.vim, Rename to `git-lens.vim`, Move to `./`
+- `git-blame.vim`: Clone from https://github.com/zivyangll/git-blame.vim, Rename to `git-blame.vim`, Move to `./`
 - `vim-hocon`: Clone from https://github.com/theabc50111/vim-hocon, Rename to `vim-hocon`, Move to `./`
 - `vim-jsonpath`: Clone from https://github.com/mogelbrod/vim-jsonpath, Rename to `vim-jsonpath`, Move to `./`
