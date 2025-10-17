@@ -3,8 +3,12 @@
 - `cscope`: Download from https://sourceforge.net/projects/cscope/files/, Untar cscope*.tar.gz, Rename to `cscope`, Move to `./`
 - `plug.vim`: Download https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim, Move to `./`
 - `dracula`: Clone from https://github.com/dracula/vim.git, Rename to `dracula`, Move to `./`
+- `ale`: Clone from https://github.com/dense-analysis/ale.git, Rename to `ale`, Move to `./`
+- `vim-lsp`: Clone from https://github.com/prabirshrestha/vim-lsp, Rename to `vim-lsp`, Move to `./`
+- `vim-lsp-ale`: Clone from https://github.com/rhysd/vim-lsp-ale, Rename to `vim-lsp-ale`, Move to `./`
+- `vista`: Clone from https://github.com/liuchengxu/vista.vim, Rename to `vista`, Move to `./`
 - `vim-airline`: Clone from https://github.com/vim-airline/vim-airline.git, Rename to `vim-airline`, Move to `./`
 - `vim-airline-themes`: Clone from https://github.com/vim-airline/vim-airline-themes.git, Rename to `vim-airline-themes`, Move to `./`
-- `tagbar`: Clone from https://github.com/preservim/tagbar.git, Rename to `tagbar`, Move to `./`
-- `ale`: Clone from https://github.com/dense-analysis/ale.git, Rename to `ale`, Move to `./`
 - `git-lens.vim`: Clone from https://github.com/Eliot00/git-lens.vim, Rename to `ale`, Move to `./`
+- `vim-hocon`: Clone from https://github.com/theabc50111/vim-hocon, Rename to `vim-hocon`, Move to `./`
+- `vim-jsonpath`: Clone from https://github.com/mogelbrod/vim-jsonpath, Rename to `vim-jsonpath`, Move to `./`

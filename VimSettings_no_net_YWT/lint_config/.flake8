@@ -9,7 +9,7 @@ extend-ignore =
     E501,
     # too many leading '#' for block comment
     E266
-inline-quotes = '
-multiline-quotes = '
+inline-quotes = "
+multiline-quotes = "
 docstring-quotes = """
 avoid-escape = False

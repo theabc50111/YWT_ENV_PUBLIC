@@ -81,7 +81,7 @@ if [ "$gnome" = "true" ]; then
     if (( $(echo "$gnome_ver > 3.8" |bc -l) )) && [ $terminal_profile_len -le 1 ]; then
         echo "Because gnome version<3.8, so can't create gnome terminal profile by script, so please CREATE ONE gnome profile MANUALLY by GUI"
         exit 0
-    fi                   
+    fi
 fi
 
 
@@ -106,8 +106,6 @@ git clone https://github.com/zsh-users/zsh-completions ${ZSH_CUSTOM:-${ZSH:-~/.o
 git clone https://github.com/zsh-users/zsh-autosuggestions.git ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-autosuggestions
 git clone https://github.com/zsh-users/zsh-syntax-highlighting.git ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting
 
-# install TPM〔Tmux Plugin Manager〕
-git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm
 
 # install dracula scheme for zsh-highlighting
 git clone https://github.com/dracula/zsh-syntax-highlighting.git
@@ -141,14 +139,25 @@ cp -rf $PWD/.zshrc ~/
 cp -rf $PWD/.bashrc ~/
 cp -rf $PWD/.profile ~/
 cp -rf $PWD/.tmux.conf ~/
+
+# install TPM〔Tmux Plugin Manager〕
+git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm
+~/.tmux/plugins/tpm/bin/install_plugins
+mkdir -p ~/.tmux/scripts
+cp $PWD/tmux_scripts/* ~/.tmux/scripts/
+
 git reset --hard
 
 if [ "$operator" != "root" ]; then
-    sudo cp -rf $PWD/hosts /etc/
-    sudo sed -i "s/#127.0.1.1 # revise to  your loscalhost hostname/127.0.0.1 $HOSTNAME/" /etc/hosts    
+    sudo cp $PWD/hosts $PWD/hosts.new
+    sudo sed -i "s/#127.0.1.1 # revise to  your loscalhost hostname/127.0.0.1 $HOSTNAME/" $PWD/hosts.new
+    sudo cp -rf $PWD/hosts.new /etc/hosts
+    sudo rm -rf $PWD/hosts.new
 else
-    cp -rf $PWD/hosts /etc/
-    sed -i "s/#127.0.1.1 # revise to  your loscalhost hostname/127.0.0.1 $HOSTNAME/" /etc/hosts    
+    cp $PWD/hosts $PWD/hosts.new
+    sed -i "s/#127.0.1.1 # revise to  your loscalhost hostname/127.0.0.1 $HOSTNAME/" $PWD/hosts.new
+    cp -rf $PWD/hosts.new /etc/hosts
+    rm -rf $PWD/hosts.new
 fi
 
 echo "Finish!!!!!!!!!!!!!!!!!!!!"

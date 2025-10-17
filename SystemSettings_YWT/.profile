@@ -17,3 +17,10 @@ fi
 if [ -d "$HOME/.local/bin" ] ; then
     PATH="$HOME/.local/bin:$PATH"
 fi
+
+
+# ywt setting aliases
+alias saturn='ssh ywt01_dmlab@140.119.164.201 -p 10000'
+alias mercury='ssh ywt01_dmlab@140.119.164.193 -p 10000'
+alias mars='ssh ywt01_dmlab@140.119.164.201 -p 15000'
+alias uranus='ssh ywt01_dmlab@140.119.164.193 -p 15000'

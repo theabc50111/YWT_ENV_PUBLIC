@@ -7,3 +7,9 @@ extend-ignore =
     E116,
     # line too long
     E501,
+    # too many leading '#' for block comment
+    E266
+inline-quotes = "
+multiline-quotes = "
+docstring-quotes = """
+avoid-escape = False

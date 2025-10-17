@@ -1,5 +1,4 @@
 runtime! debian.vim
-
 " Source a global configuration file if available
 if filereadable("/etc/vim/vimrc.local")
   source /etc/vim/vimrc.local
@@ -63,8 +62,15 @@ endif
 " @@@@@@@@@@@@@@@@@@@ use syntax complete if nothing else available @@@@@@@@@@@@@@@@@@@
 
 " @@@@@@@@@@@@@@@@@@@ auto sort order of imported module python script
-autocmd BufWritePost *.py :!isort %
+if executable("isort")
+    autocmd BufWritePost *.py :!isort '%'
+endif
 " @@@@@@@@@@@@@@@@@@@ auto sort order of imported module python script
+" @@@@@@@@@@@@@@@@@@@ auto formatting python script
+if executable("black")
+    autocmd BufWritePost *.py :!black --line-length 200 '%'
+endif
+" @@@@@@@@@@@@@@@@@@@ auto formatting python script
 
 "--------------------------------------------------------------------------- 
 " vim plug
@@ -72,11 +78,17 @@ autocmd BufWritePost *.py :!isort %
 
 call plug#begin()
 Plug 'dracula/vim', { 'as': 'dracula' }
-Plug 'dense-analysis/ale'
-Plug 'majutsushi/tagbar'
+Plug 'dense-analysis/ale'  " The asynchronous engine and linter
+Plug 'prabirshrestha/vim-lsp'  " LSP client
+Plug 'rhysd/vim-lsp-ale'  " The bridge plugin
+Plug 'liuchengxu/vista.vim'
 Plug 'vim-airline/vim-airline'
 Plug 'vim-airline/vim-airline-themes'
+Plug 'Eliot00/git-lens.vim'  " git-lens.vim fit to Vim 9.0 and upper, For older Vim, you might want to use zivyangll / git-blame.vim (https://github.com/zivyangll/git-blame.vim)
+Plug 'DanBradbury/copilot-chat.vim'  " github/copilot.vim need nodejs
 Plug 'github/copilot.vim'
+Plug 'theabc50111/vim-hocon'
+Plug 'mogelbrod/vim-jsonpath'
 call plug#end()
 
 
@@ -84,52 +96,35 @@ call plug#end()
 " custom settings for pluging
 "--------------------------------------------------------------------------- 
 
-" @@@@@@@@@@@@@@@@@@@ cscope custom settings@@@@@@@@@@@@@@@@@@@
-" setting location of cscope db & cscopetag
-let CSCOPE_DB=expand("~/.config/cscope_dir/cscope_index/cscope.out")
 
-func UpdateCscopeDB(channel, msg)
-    if has("cscope")
-    "   set csprg=/usr/local/bin/cscope
-        set csto=0
-        set cst
-        set nocsverb
-        set nocscopeverbose
-        " add database in ~/cscope_dir
-        if g:['CSCOPE_DB'] != ""
-            exe "cs add" g:['CSCOPE_DB']
-        " add database pointed to by environment
-        else
-            exe "cs add" $CSCOPE_DB
-        endif
-        set csverb
-    endif
-endfunc
-
-" based on different filetype to create cscope.files
-if !filereadable(CSCOPE_DB)
-    echom "Not Detect CSCOPE_DB!!!!!!"
-
-    if !isdirectory(expand("~/.config/cscope_files"))
-        call mkdir(expand("~/.config/cscope_dir"), "p")
-        call mkdir(expand("~/.config/cscope_dir/cscope_index"), "p")
-    endif
-
-    autocmd BufRead,BufNewFile *.py  let job_cscope = job_start(["/bin/sh", "-c", "find / -name \"*.py\" -not -path \"*__pycache__/*\" -not -path \"*.ipynb_checkpoints*\" | xargs realpath > ~/.config/cscope_dir/cscope.files; cd ~/.config/cscope_dir/cscope_index; cscope -Rbq -i ~/.config/cscope_dir/cscope.files"], {"exit_cb": "UpdateCscopeDB"})
-    autocmd BufRead,BufNewFile *.java let job_cscope = job_start(["/bin/sh", "-c", "find / -name \"*.java\" | xargs realpath > ~/.config/cscope_dir/cscope.files; cd ~/.config/cscope_dir/cscope_index; cscope -Rbq -i ~/.config/cscope_dir/cscope.files"], {"exit_cb": "UpdateCscopeDB"})
-    autocmd BufRead,BufNewFile *.c let job_cscope = job_start(["/bin/sh", "-c", "find / -name \"*.c\" -o -name \"*.h\" | xargs realpath > ~/.config/cscope_dir/cscope.files; cd ~/.config/cscope_dir/cscope_index; cscope -Rbq -i ~/.config/cscope_dir/cscope.files"], {"exit_cb": "UpdateCscopeDB"})
-    autocmd BufRead,BufNewFile *.cpp let job_cscpoe = job_start(["/bin/sh", "-c", "find / -name \"*.cpp\" -o -name \"*.hpp\" -o -name \"*.h\" | xargs realpath > ~/.config/cscope_dir/cscope.files; cd ~/.config/cscope_dir/cscope_index; cscope -Rbq -i ~/.config/cscope_dir/cscope.files"], {"exit_cb": "UpdateCscopeDB"})
-    autocmd BufRead,BufNewFile *.hpp let job_cscope = job_start(["/bin/sh", "-c", "find / -name \"*.cpp\" -o -name \"*.hpp\" -o -name \"*.h\" | xargs realpath > ~/.config/cscope_dir/cscope.files; cd ~/.config/cscope_dir/cscope_index; cscope -Rbq -i ~/.config/cscope_dir/cscope.files"], {"exit_cb": "UpdateCscopeDB"})
-else
-    echom "If you want to update cscopeDB, please delete ~/cscope.out..."
-    let job_cscope = job_start(["/bin/sh", "-c", "echo 'cscope.out exist in ~/.config/cscope_dir/cscope_index'"], {"exit_cb": "UpdateCscopeDB"})
+" @@@@@@@@@@@@@@@@@@@ vim-lsp custom settings@@@@@@@@@@@@@@@@@@@
+" Check if the pylsp executable exists
+if executable('pylsp')
+    " Register the pylsp language server for Python files
+    au User lsp_setup call lsp#register_server({
+        \ 'name': 'pylsp',
+        \ 'cmd': {server_info->['pylsp']},
+        \ 'allowlist': ['python'],
+        \ 'initialization_options': {
+        \   'pylsp': {
+        \     'plugins': {
+        \       'pyflakes': {'enabled': v:false},
+        \       'pycodestyle': {'enabled': v:false},
+        \     }
+        \   }
+        \ },
+        \ })
 endif
-" @@@@@@@@@@@@@@@@@@@ cscope custom settings @@@@@@@@@@@@@@@@@@@
+" @@@@@@@@@@@@@@@@@@@ vim-lsp custom settings@@@@@@@@@@@@@@@@@@@
 
-" @@@@@@@@@@@@@@@@@@@ ctags custom settings @@@@@@@@@@@@@@@@@@@
-autocmd BufReadPost * silent! !ctags -R --exclude="*__pycache__*" --exclude="*ipynb_checkpoints*" --exclude="*.json" --exclude="*ipynb*" -f $HOME/.config/tags $(pwd)
-set tags+=$HOME/.config/tags
-" @@@@@@@@@@@@@@@@@@@ ctags custom settings @@@@@@@@@@@@@@@@@@@
+" @@@@@@@@@@@@@@@@@@@ vista custom settings@@@@@@@@@@@@@@@@@@@
+let g:vista_default_executive = 'vim_lsp'
+
+" Custom function to get the nearest method or function from vista.vim
+function! NearestMethodOrFunction() abort
+    return get(b:, 'vista_nearest_method_or_function', '')
+endfunction
+" @@@@@@@@@@@@@@@@@@@ vista custom settings@@@@@@@@@@@@@@@@@@@
 
 " @@@@@@@@@@@@@@@@@@@ ale custom settings @@@@@@@@@@@@@@@@@@@
 let g:ale_linters = {
@@ -143,6 +138,13 @@ let g:ale_python_flake8_options = '--config='.expand('~/.config/lint_config/.fla
 let g:ale_virtualtext_cursor = 0
 " @@@@@@@@@@@@@@@@@@@ ale custom settings @@@@@@@@@@@@@@@@@@@
 
+" @@@@@@@@@@@@@@@@@@@ git-lens custom settings @@@@@@@@@@@@@@@@@@@
+" ref: - https://github.com/Eliot00/git-lens.vim
+let g:GIT_LENS_ENABLED=v:true  " make plugin git-lens defaultly enabled
+
+" git-blame.vim(For older vim, alternative of git-lens)
+"     ref: - https://github.com/zivyangll/git-blame.vim
+" @@@@@@@@@@@@@@@@@@@ git-lens custom settings @@@@@@@@@@@@@@@@@@@
 
 "--------------------------------------------------------------------------- 
 " Outlook Settings
@@ -185,7 +187,10 @@ match Invisible /\s/
 
 " @@@@@@@@@@@@@@@@@@@ display name of class and function for vim-airline @@@@@@@@@@@@@@@@@@@
 let g:airline_theme='dracula'
-let g:airline#extensions#tagbar#flags = 'f'  " ref: https://superuser.com/questions/279651/how-can-i-make-vim-show-the-current-class-and-method-im-editing#answer-1148549
+let g:airline_section_b = '%{getcwd()}'
+let g:airline#extensions#vista#enabled = 1
+let g:airline#extensions#ale#enabled = 1
+let g:airline#extensions#lsp#enabled = 1
 " @@@@@@@@@@@@@@@@@@@ display name of class and function for vim-airline @@@@@@@@@@@@@@@@@@@
 
 "---------------------------------------------------------------------------
@@ -212,7 +217,7 @@ inoremap jj <ESC>
 " ,/ turn off search highlighting
 nmap <leader>/ :nohl<CR>
 " if is edit .py files=> ,c will save files and execute .py
-autocmd BufRead *.py nmap<leader>c :w<Esc>G:r!python3 %<CR>`.
+autocmd BufRead *.py nmap <leader>c :w<CR>:silent !~/.tmux/scripts/py_res_popup.sh %<CR><CR>
 
 " @@@@@@@@@@@@@@@@@@@ move around splits @@@@@@@@@@@@@@@@@@@
 " move to and maximize the below split
@@ -227,64 +232,53 @@ set wmw=0                     " set the min width of a window to 0 so we can max
 set wmh=0                   " set the min height of a window to 0 so we can maximize others
 " @@@@@@@@@@@@@@@@@@@ move around splits @@@@@@@@@@@@@@@@@@@
 
-" @@@@@@@@@@@@@@@@@@@ tagbar key maps @@@@@@@@@@@@@@@@@@@
-nmap <F8> :TagbarToggle<CR>
-" @@@@@@@@@@@@@@@@@@@ tagbar key maps @@@@@@@@@@@@@@@@@@@
+" @@@@@@@@@@@@@@@@@@@ copilot-chat maps @@@@@@@@@@@@@@@@@@@
+" Open a new Cpilot Chat window
+nnoremap <leader>cc :CopilotChatOpen<CR>
+" Add visual selection to copilot window
+vmap <leader>a <Plug>CopilotChatAddSelection
+" @@@@@@@@@@@@@@@@@@@ copilot-chat maps @@@@@@@@@@@@@@@@@@@
 
-" @@@@@@@@@@@@@@@@@@@ cscope key maps @@@@@@@@@@@@@@@@@@@
+" @@@@@@@@@@@@@@@@@@@ json path maps @@@@@@@@@@@@@@@@@@@
+" Define mappings for json buffers
+au FileType json noremap <buffer> <silent> <leader>d :call jsonpath#echo()<CR>
+au FileType json noremap <buffer> <silent> <leader>g :call jsonpath#goto()<CR>
+" @@@@@@@@@@@@@@@@@@@ json path maps @@@@@@@@@@@@@@@@@@@
 
-if has("cscope")
+" @@@@@@@@@@@@@@@@@@@ vim-lsp key maps @@@@@@@@@@@@@@@@@@@
+function! s:on_lsp_buffer_enabled() abort
+    setlocal omnifunc=lsp#complete
+    setlocal signcolumn=yes
+    if exists('+tagfunc') | setlocal tagfunc=lsp#tagfunc | endif
+    nmap <buffer> gd <plug>(lsp-definition)
+    nmap <buffer> gs <plug>(lsp-document-symbol-search)
+    nmap <buffer> gS <plug>(lsp-workspace-symbol-search)
+    nmap <buffer> gr <plug>(lsp-references)
+    nmap <buffer> gi <plug>(lsp-implementation)
+    nmap <buffer> lgt <plug>(lsp-type-definition)
+    nmap <buffer> <leader>rn <plug>(lsp-rename)
+    nmap <buffer> [g <plug>(lsp-previous-diagnostic)
+    nmap <buffer> ]g <plug>(lsp-next-diagnostic)
+    nmap <buffer> K <plug>(lsp-hover)
+    nnoremap <buffer> <expr><c-f> lsp#scroll(+4)
+    nnoremap <buffer> <expr><c-d> lsp#scroll(-4)
 
-    " 'CTRL-\' : To do the first type of search
-    "            - followed by one of the cscope search types:(s, g, c, t, e, f, i, d)
-    " 'CTRL-T' : Go back to where you were before the search.
+    let g:lsp_format_sync_timeout = 1000
+    "autocmd! BufWritePre *.rs,*.go call execute('LspDocumentFormatSync')
 
-    nmap <C-\>s :cs find s <C-R>=expand("<cword>")<CR><CR>	
-    nmap <C-\>g :cs find g <C-R>=expand("<cword>")<CR><CR>	
-    nmap <C-\>c :cs find c <C-R>=expand("<cword>")<CR><CR>	
-    nmap <C-\>t :cs find t <C-R>=expand("<cword>")<CR><CR>	
-    nmap <C-\>e :cs find e <C-R>=expand("<cword>")<CR><CR>	
-    nmap <C-\>f :cs find f <C-R>=expand("<cfile>")<CR><CR>	
-    nmap <C-\>i :cs find i ^<C-R>=expand("<cfile>")<CR>$<CR>
-    nmap <C-\>d :cs find d <C-R>=expand("<cword>")<CR><CR>	
+    " refer to doc to add more commands
+endfunction
 
+augroup lsp_install
+    au!
+    " call s:on_lsp_buffer_enabled only for languages that has the server registered.
+    autocmd User lsp_buffer_enabled call s:on_lsp_buffer_enabled()
+augroup END
+" @@@@@@@@@@@@@@@@@@@ vim-lsp key maps @@@@@@@@@@@@@@@@@@@
 
-    " Using 'CTRL-spacebar' (intepreted as CTRL-@ by vim) then a search type
-    " makes the vim window split horizontally, with search result displayed in
-    " the new window.
-    "
-    " (Note: earlier versions of vim may not have the :scs command, but it
-    " can be simulated roughly via:
-    "    nmap <C-@>s <C-W><C-S> :cs find s <C-R>=expand("<cword>")<CR><CR>	
-
-    nmap <C-@>s :vert scs find s <C-R>=expand("<cword>")<CR><CR>	
-    nmap <C-@>g :vert scs find g <C-R>=expand("<cword>")<CR><CR>	
-    nmap <C-@>c :vert scs find c <C-R>=expand("<cword>")<CR><CR>	
-    nmap <C-@>t :vert scs find t <C-R>=expand("<cword>")<CR><CR>	
-    nmap <C-@>e :vert scs find e <C-R>=expand("<cword>")<CR><CR>	
-    nmap <C-@>f :vert scs find f <C-R>=expand("<cfile>")<CR><CR>	
-    nmap <C-@>i :vert scs find i ^<C-R>=expand("<cfile>")<CR>$<CR>	
-    nmap <C-@>d :vert scs find d <C-R>=expand("<cword>")<CR><CR>	
-
-
-    " Hitting CTRL-space *twice* before the search type does a vertical 
-    " split instead of a horizontal one (vim 6 and up only)
-    "
-    " (Note: you may wish to put a 'set splitright' in your .vimrc
-    " if you prefer the new window on the right instead of the left
-
-    nmap <C-@><C-@>s :scs find s <C-R>=expand("<cword>")<CR><CR>
-    nmap <C-@><C-@>g :scs find g <C-R>=expand("<cword>")<CR><CR>
-    nmap <C-@><C-@>c :scs find c <C-R>=expand("<cword>")<CR><CR>
-    nmap <C-@><C-@>t :scs find t <C-R>=expand("<cword>")<CR><CR>
-    nmap <C-@><C-@>e :scs find e <C-R>=expand("<cword>")<CR><CR>
-    nmap <C-@><C-@>f :scs find f <C-R>=expand("<cfile>")<CR><CR>	
-    nmap <C-@><C-@>i :scs find i ^<C-R>=expand("<cfile>")<CR>$<CR>	
-    nmap <C-@><C-@>d :scs find d <C-R>=expand("<cword>")<CR><CR>
-
-endif
-" @@@@@@@@@@@@@@@@@@@ cscope key maps @@@@@@@@@@@@@@@@@@@
-
+" @@@@@@@@@@@@@@@@@@@ Vista key maps @@@@@@@@@@@@@@@@@@@
+nmap <F8> :Vista!!<CR>
+" @@@@@@@@@@@@@@@@@@@ Vista key maps @@@@@@@@@@@@@@@@@@@
 
 "--------------------------------------------------------------------------- 
 " Deprecated SHORTCUTS
@@ -294,6 +288,63 @@ endif
 "map <C-t><C-t> :tabnew<CR>
 " close tab
 "map <C-t><C-w> :tabclose<CR> 
+
+
+" @@@@@@@@@@@@@@@@@@@ tagbar key maps @@@@@@@@@@@@@@@@@@@
+"nmap <F8> :TagbarToggle<CR>
+" @@@@@@@@@@@@@@@@@@@ tagbar key maps @@@@@@@@@@@@@@@@@@@
+
+"" @@@@@@@@@@@@@@@@@@@ cscope key maps @@@@@@@@@@@@@@@@@@@
+"
+"if has("cscope")
+"    " 'CTRL-\' : To do the first type of search
+"    "            - followed by one of the cscope search types:(s, g, c, t, e, f, i, d)
+"    " 'CTRL-T' : Go back to where you were before the search.
+"
+"    nmap <C-\>s :cs find s <C-R>=expand("<cword>")<CR><CR>	
+"    nmap <C-\>g :cs find g <C-R>=expand("<cword>")<CR><CR>	
+"    nmap <C-\>c :cs find c <C-R>=expand("<cword>")<CR><CR>	
+"    nmap <C-\>t :cs find t <C-R>=expand("<cword>")<CR><CR>	
+"    nmap <C-\>e :cs find e <C-R>=expand("<cword>")<CR><CR>	
+"    nmap <C-\>f :cs find f <C-R>=expand("<cfile>")<CR><CR>	
+"    nmap <C-\>i :cs find i ^<C-R>=expand("<cfile>")<CR>$<CR>
+"    nmap <C-\>d :cs find d <C-R>=expand("<cword>")<CR><CR>	
+"
+"
+"    " Using 'CTRL-spacebar' (intepreted as CTRL-@ by vim) then a search type
+"    " makes the vim window split horizontally, with search result displayed in
+"    " the new window.
+"    "
+"    " (Note: earlier versions of vim may not have the :scs command, but it
+"    " can be simulated roughly via:
+"    ""    nmap <C-@>s <C-W><C-S> :cs find s <C-R>=expand("<cword>")<CR><CR>	
+"
+"    nmap <C-@>s :vert scs find s <C-R>=expand("<cword>")<CR><CR>	
+"    nmap <C-@>g :vert scs find g <C-R>=expand("<cword>")<CR><CR>	
+"    nmap <C-@>c :vert scs find c <C-R>=expand("<cword>")<CR><CR>	
+"    nmap <C-@>t :vert scs find t <C-R>=expand("<cword>")<CR><CR>	
+"    nmap <C-@>e :vert scs find e <C-R>=expand("<cword>")<CR><CR>	
+"    nmap <C-@>f :vert scs find f <C-R>=expand("<cfile>")<CR><CR>	
+"    nmap <C-@>i :vert scs find i ^<C-R>=expand("<cfile>")<CR>$<CR>	
+"    nmap <C-@>d :vert scs find d <C-R>=expand("<cword>")<CR><CR>	
+"
+"
+"    " Hitting CTRL-space *twice* before the search type does a vertical 
+"    " split instead of a horizontal one (vim 6 and up only)
+"    "
+"    " (Note: you may wish to put a 'set splitright' in your .vimrc
+"    " if you prefer the new window on the right instead of the left
+"
+"    nmap <C-@><C-@>s :scs find s <C-R>=expand("<cword>")<CR><CR>
+"    nmap <C-@><C-@>g :scs find g <C-R>=expand("<cword>")<CR><CR>
+"    nmap <C-@><C-@>c :scs find c <C-R>=expand("<cword>")<CR><CR>
+"    nmap <C-@><C-@>t :scs find t <C-R>=expand("<cword>")<CR><CR>
+"    nmap <C-@><C-@>e :scs find e <C-R>=expand("<cword>")<CR><CR>
+"    nmap <C-@><C-@>f :scs find f <C-R>=expand("<cfile>")<CR><CR>	
+"    nmap <C-@><C-@>i :scs find i ^<C-R>=expand("<cfile>")<CR>$<CR>	
+"    nmap <C-@><C-@>d :scs find d <C-R>=expand("<cword>")<CR><CR>
+"endif
+"" @@@@@@@@@@@@@@@@@@@ cscope key maps @@@@@@@@@@@@@@@@@@@
 
 
 "--------------------------------------------------------------------------- 
@@ -325,6 +376,9 @@ endif
 "endfunction
 " @@@@@@@@@@@@@@@@@ status line @@@@@@@@@@@@@@@
 
+" @@@@@@@@@@@@@@@@@@@ display name of class and function for vim-airline @@@@@@@@@@@@@@@@@@@
+"let g:airline#extensions#tagbar#flags = 'f'  " ref: https://superuser.com/questions/279651/how-can-i-make-vim-show-the-current-class-and-method-im-editing#answer-1148549
+" @@@@@@@@@@@@@@@@@@@ display name of class and function for vim-airline @@@@@@@@@@@@@@@@@@@
 
 "--------------------------------------------------------------------------- 
 " Deprecated function
@@ -342,5 +396,78 @@ endif
 " Deprecated vim-plug
 "--------------------------------------------------------------------------- 
 "Plug 'fisadev/vim-isort'  " Just call the ``:Isort`` command, and it will reorder the imports of the current python file. (https://vimawesome.com/plugin/vim-isort)
+"Plug 'majutsushi/tagbar'  " show code tag in sidebar, highly integrated with ctags
 
 
+"--------------------------------------------------------------------------- 
+" Deprecated custom settings
+"--------------------------------------------------------------------------- 
+""" @@@@@@@@@@@@@@@@@@@ cscope custom settings@@@@@@@@@@@@@@@@@@@
+""" setting base location of code index (ctags, cscope)
+""let CODE_IDX_DIR=expand("~/code_index")  " You can update this directory if you need
+""let PROJECT_ROOT=expand(matchstr(expand('%:p'), '^/workspace/codes/[^/]\+'))  " You can update this directory if you need
+""
+""" setting location of cscope db & cscopetag
+""let CSCOPE_DB_DIR=CODE_IDX_DIR .. "/cscope_index"
+""let CSCOPE_DB_SRC=CSCOPE_DB_DIR .. "/cscope.files"
+""let CSCOPE_DB=CSCOPE_DB_DIR .. "/cscope.out"
+""
+""if !isdirectory(CSCOPE_DB_DIR)
+""    call mkdir(CSCOPE_DB_DIR, "p")
+""endif
+""
+""func UpdateCscopeDB(channel, msg)
+""    if has("cscope")
+""    "   set csprg=/usr/local/bin/cscope
+""        set csto=0
+""        set cst
+""        set nocsverb
+""        set nocscopeverbose
+""        " add database in CSCOPE_DB
+""        if g:['CSCOPE_DB'] != ""
+""            exe "cs add" g:['CSCOPE_DB']
+""        " add database pointed to by environment
+""        else
+""            exe "cs add" $CSCOPE_DB
+""        endif
+""        set csverb
+""    endif
+""endfunc
+""
+""" based on different filetype to create cscope.files
+""if executable("cscope") && PROJECT_ROOT!=""
+""    if !filereadable(CSCOPE_DB)
+""        echom "Not Detect " .. CSCOPE_DB .. ", so start to create cscope.file, cscope.out!!!!!!"
+""        let create_cscope_db_cmd=" | xargs realpath > " .. CSCOPE_DB_SRC .. "; " .. "cd " .. CSCOPE_DB_DIR .. "; " .. "cscope -Rbq -i " .. CSCOPE_DB_SRC
+""        autocmd BufRead,BufNewFile *.py  let job_cscope = job_start(["/bin/sh", "-c", "find " .. PROJECT_ROOT .. " -name \"*.py\" -not -path \"*__pycache__/*\" -not -path \"*.ipynb_checkpoints*\"" .. create_cscope_db_cmd], {"exit_cb": "UpdateCscopeDB"})
+""        autocmd BufRead,BufNewFile *.java let job_cscope = job_start(["/bin/sh", "-c", "find " .. PROJECT_ROOT .. " -name \"*.java\"" .. create_cscope_db_cmd], {"exit_cb": "UpdateCscopeDB"})
+""        autocmd BufRead,BufNewFile *.c let job_cscope = job_start(["/bin/sh", "-c", "find " .. PROJECT_ROOT .. " -name \"*.c\" -o -name \"*.h\"" .. create_cscope_db_cmd], {"exit_cb": "UpdateCscopeDB"})
+""        autocmd BufRead,BufNewFile *.cpp let job_cscpoe = job_start(["/bin/sh", "-c", "find " .. PROJECT_ROOT .. " -name \"*.cpp\" -o -name \"*.hpp\" -o -name \"*.h\"" .. create_cscope_db_cmd], {"exit_cb": "UpdateCscopeDB"})
+""        autocmd BufRead,BufNewFile *.hpp let job_cscope = job_start(["/bin/sh", "-c", "find " .. PROJECT_ROOT .. " -name \"*.cpp\" -o -name \"*.hpp\" -o -name \"*.h\"" .. create_cscope_db_cmd], {"exit_cb": "UpdateCscopeDB"})
+""    else
+""        echom "If you want to update cscopeDB, please delete " .. CSCOPE_DB
+""        let job_cscope = job_start(["/bin/sh", "-c", "echo 'cscope.out exist in" .. CSCOPE_DB .. "'"], {"exit_cb": "UpdateCscopeDB"})
+""    endif
+""endif
+""" @@@@@@@@@@@@@@@@@@@ cscope custom settings @@@@@@@@@@@@@@@@@@@
+""
+""" @@@@@@@@@@@@@@@@@@@ ctags custom settings @@@@@@@@@@@@@@@@@@@
+""" setting location of tag file of ctags
+""let CTAGS_TAG_DIR=CODE_IDX_DIR .. "/ctags_index"
+""let CTAGS_TAG=CTAGS_TAG_DIR .. "/tags"
+""
+""if !isdirectory(CTAGS_TAG_DIR)
+""    call mkdir(CTAGS_TAG_DIR, "p")
+""endif
+""
+""if executable("ctags") && PROJECT_ROOT!=""
+""    if !filereadable(CTAGS_TAG)
+""        echom "Not Detect " .. CTAGS_TAG .. ", so start to create tags!!!!!!"
+""        autocmd BufReadPost * silent execute "!ctags -R --python-kinds=-i --languages=Python --extra=+qf --fields=+nt --exclude=\"*__pycache__*\" --exclude=\"*ipynb_checkpoints*\" --exclude=\"*.json\" --exclude=\"*ipynb*\" -f " .. CTAGS_TAG .. " " .. PROJECT_ROOT
+""        let &tags .= ',' . CTAGS_TAG
+""    else
+""        echom "If you want to update ctags tags, please delete " .. CTAGS_TAG
+""        let &tags .= ',' . CTAGS_TAG
+""    endif
+""endif
+""" @@@@@@@@@@@@@@@@@@@ ctags custom settings @@@@@@@@@@@@@@@@@@@
