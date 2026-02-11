@@ -88,10 +88,10 @@ fi
 # install packages with apt 
 if [ "$operator" != "root" ]; then
     sudo apt-get update
-    sudo apt install -y git curl wget zsh tmux sed
+    sudo apt install -y git curl wget zsh tmux sed tree less jq bat
 else
     apt-get update
-    apt install -y git curl wget zsh tmux sed
+    apt install -y git curl wget zsh tmux sed tree less jq bat
 fi
 
 # make it yout default shell
