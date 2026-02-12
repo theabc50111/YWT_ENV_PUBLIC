@@ -1,163 +1,182 @@
-#! /bin/bash
+#!/bin/bash
 
-set -u # make sure all varaible is set
-operator=$(whoami)
+set -euo pipefail
 
-if [ $# -eq 0 ]
-then
-    echo "Need at least one argument"
-    echo "Required argument : --gnome"
-    exit 0
-fi
+# --- Helper Functions ---
 
-
-LONG_ARGUMENT_LIST=(
-    "gnome:"  # `:` means require arguments
-    "help"
-)
-
-ARGUMENT_LIST=(
-    "h"
-)
-
-# read arguments
-opts=$(getopt \
-  --longoptions "$(printf "%s," "${LONG_ARGUMENT_LIST[@]}")" \
-  --options "$(printf "%s," "${ARGUMENT_LIST[@]}")" \
-  --name "$(basename "$0")" \
-  -- "$@"
-)
-
-# if sending invalid option, stop script
-if [ $? -ne 0 ]; then
-  echo "Invalid option provided"
-  exit 1
-fi
-
-eval set -- "$opts"
-# The eval in eval set --$opts is required as arguments returned by getopt are quoted.
-
-while [[ $# -gt 0 ]]; do
-  case "$1" in
-    --gnome)
-      gnome="$2" # Note: In order to handle the argument containing space, the quotes around '$2': they are essential!
-      shift 2 # The 'shift' eats a commandline argument, i.e. converts $1=a, $2=b, $3=c, $4=d into $1=b, $2=c, $3=d. shift 2 moves it all the way to $1=c, $2=d. It's done since that particular branch uses an argument, so it has to remove two things from the list (the -r and the argument following it) not just one.
-      ;;
-
-    -h|--help)
-        echo "This script setting for tmux, zsh, bash, gnome"
-        echo "--gnome takes 'true' or 'false'"
-        exit 0
-        ;;
-
-    --)
-      # if getopt reached the end of options, exit loop
-      shift
-      break
-      ;;
-
-    *)
-      # if sending invalid option, stop script
-      echo "================ Error:Unrecognized option: $1 provided ================"
-      exit 1
-      ;;
-
-  esac
-done
-
-
-# check if gnome terminal profile settings is right
-if [ "$gnome" = "true" ]; then
-    if [ "$operator" != "root" ]; then
-        sudo apt install -y bc
-    else 
-        apt install -y bc
-    fi
-
-    terminal_profile_list=($(gsettings get org.gnome.Terminal.ProfilesList list))
-    terminal_profile_len=${#terminal_profile_list[@]}
-    gnome_ver=$(gnome-terminal --version|grep  -Eo '[0-9]*\.[0-9]*'|head -1)
-
-    if (( $(echo "$gnome_ver > 3.8" |bc -l) )) && [ $terminal_profile_len -le 1 ]; then
-        echo "Because gnome version<3.8, so can't create gnome terminal profile by script, so please CREATE ONE gnome profile MANUALLY by GUI"
-        exit 0
-    fi
-fi
-
-
-# install packages with apt 
-if [ "$operator" != "root" ]; then
-    sudo apt-get update
-    sudo apt install -y git curl wget zsh tmux sed tree less jq bat
-else
-    apt-get update
-    apt install -y git curl wget zsh tmux sed tree less jq bat
-fi
-
-# make it yout default shell
-chsh -s $(which zsh)
-
-# install Oh-my-zsh
-rm -rf ~/.oh-my-zsh
-sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
-
-# install zsh plugin
-git clone https://github.com/zsh-users/zsh-completions ${ZSH_CUSTOM:-${ZSH:-~/.oh-my-zsh}/custom}/plugins/zsh-completions
-git clone https://github.com/zsh-users/zsh-autosuggestions.git ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-autosuggestions
-git clone https://github.com/zsh-users/zsh-syntax-highlighting.git ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting
-
-
-# install dracula scheme for zsh-highlighting
-git clone https://github.com/dracula/zsh-syntax-highlighting.git
-sed -i '61 r ./zsh-syntax-highlighting/zsh-syntax-highlighting.sh' .zshrc 
-rm -rf zsh-syntax-highlighting
-
-if [ "$gnome" = "true" ]; then
-    # create gnome terminal profile
-    gnome_terminal_profile_name="YWT_Dracula"
-    source $PWD/create_gnome_terminal_profile.sh $gnome_terminal_profile_name
-
-    # install dracula scheme for gnome terminal
-    if [ "$operator" != "root" ];then
-        sudo apt-get install -y dconf-cli
+# Function to run a command, using sudo if not root.
+# This avoids repeating the root check.
+run_as_root() {
+    if [ "$(whoami)" != "root" ]; then
+        sudo "$@"
     else
-        apt-get install -y dconf-cli
+        "$@"
+    fi
+}
+
+# --- Task-specific Functions ---
+
+# Consolidates all package installations.
+install_packages() {
+    echo "INFO: Updating package lists..."
+    run_as_root apt-get update
+
+    echo "INFO: Installing required packages..."
+    local packages="git curl wget zsh tmux sed tree less jq bat"
+    if [ "$gnome_enabled" = "true" ]; then
+        packages="$packages bc dconf-cli"
+    fi
+    run_as_root apt-get install -y $packages
+    echo "SUCCESS: All packages installed."
+}
+
+# Sets up Zsh, Oh My Zsh, and plugins.
+setup_zsh() {
+    echo "INFO: Setting Zsh as the default shell..."
+    chsh -s "$(which zsh)"
+
+    echo "INFO: Installing Oh-My-Zsh..."
+    if [ -d ~/.oh-my-zsh ]; then
+        rm -rf ~/.oh-my-zsh
+    fi
+    sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
+
+    echo "INFO: Installing Zsh plugins..."
+    local custom_plugins_dir=${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins
+    git clone https://github.com/zsh-users/zsh-completions "${custom_plugins_dir}/zsh-completions"
+    git clone https://github.com/zsh-users/zsh-autosuggestions.git "${custom_plugins_dir}/zsh-autosuggestions"
+    git clone https://github.com/zsh-users/zsh-syntax-highlighting.git "${custom_plugins_dir}/zsh-syntax-highlighting"
+
+    echo "INFO: Installing Dracula theme for zsh-syntax-highlighting..."
+    local dracula_clone_dir="zsh-syntax-highlighting-dracula"
+    git clone https://github.com/dracula/zsh-syntax-highlighting.git "$dracula_clone_dir"
+    # Safely add theme to .zshrc if not already present
+    if ! grep -q "zsh-syntax-highlighting.sh" ~/.zshrc; then
+        sed -i '61 r ./'"$dracula_clone_dir"'/zsh-syntax-highlighting.sh' ~/.zshrc
+    fi
+    rm -rf "$dracula_clone_dir"
+    echo "SUCCESS: Zsh setup is complete."
+}
+
+# Handles all GNOME-related setup.
+setup_gnome() {
+    echo "INFO: Starting GNOME Terminal setup..."
+    # Check GNOME version before proceeding
+    local gnome_ver
+    gnome_ver=$(gnome-terminal --version | grep -Eo '[0-9]*\.[0-9]*' | head -1)
+    local terminal_profile_list
+    terminal_profile_list=($(gsettings get org.gnome.Terminal.ProfilesList list))
+    
+    if (( $(echo "$gnome_ver > 3.8" | bc -l) )) && [ ${#terminal_profile_list[@]} -le 1 ]; then
+        echo "WARNING: Your GNOME version is > 3.8, but you have no extra profiles."
+        echo "Please create at least one new terminal profile manually for the script to continue."
+        exit 1
     fi
 
+    local profile_name="YWT_Dracula"
+    echo "INFO: Creating GNOME Terminal profile: $profile_name..."
+    # shellcheck source=./create_gnome_terminal_profile.sh
+    source "$PWD/create_gnome_terminal_profile.sh" "$profile_name"
+
+    echo "INFO: Installing Dracula theme for GNOME Terminal..."
     git clone https://github.com/dracula/gnome-terminal
-    ./gnome-terminal/install.sh --scheme Dracula --profile $gnome_terminal_profile_name --install-dircolors
-	eval `dircolors /path/to/dircolorsdb`
-    rm -rf gnome-terminal
-    rm -rf dircolors
-    rm -rf ~/.dir_colors/dircolors.old
-else 
-    echo "not setting gnome terminal !!!!!!!!!!!!!!"
-fi;
+    ./gnome-terminal/install.sh --scheme Dracula --profile "$profile_name" --install-dircolors
+    
+    # Clean up
+    rm -rf gnome-terminal dircolors ~/.dir_colors/dircolors.old
+    echo "SUCCESS: GNOME Terminal setup is complete."
+}
+
+# Copies configuration files to home directory.
+deploy_dotfiles() {
+    echo "INFO: Deploying dotfiles (.zshrc, .bashrc, .tmux.conf)..."
+    cp -rf "$PWD/.zshrc" "$PWD/.bashrc" "$PWD/.profile" "$PWD/.tmux.conf" ~/
+    echo "SUCCESS: Dotfiles have been deployed."
+}
+
+# Sets up Tmux and its plugin manager.
+setup_tmux() {
+    echo "INFO: Installing Tmux Plugin Manager (TPM)..."
+    if [ ! -d ~/.tmux/plugins/tpm ]; then
+        git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm
+    fi
+    
+    echo "INFO: Installing Tmux plugins..."
+    ~/.tmux/plugins/tpm/bin/install_plugins
+
+    echo "INFO: Copying Tmux scripts..."
+    mkdir -p ~/.tmux/scripts
+    cp -f "$PWD/tmux_scripts/"* ~/.tmux/scripts/
+    echo "SUCCESS: Tmux setup is complete."
+}
+
+# Updates the /etc/hosts file.
+update_hosts_file() {
+    echo "INFO: Updating /etc/hosts to map localhost to hostname..."
+    local temp_hosts
+    temp_hosts=$(mktemp)
+    
+    # Create a new hosts file in a temporary location
+    cp /etc/hosts "$temp_hosts"
+    sed -i "s/#127.0.1.1 # revise to  your loscalhost hostname/127.0.0.1 $HOSTNAME/" "$temp_hosts"
+
+    # Overwrite the original /etc/hosts file
+    run_as_root cp "$temp_hosts" /etc/hosts
+    rm -f "$temp_hosts"
+    echo "SUCCESS: /etc/hosts file updated."
+}
 
 
-cp -rf $PWD/.zshrc ~/
-cp -rf $PWD/.bashrc ~/
-cp -rf $PWD/.profile ~/
-cp -rf $PWD/.tmux.conf ~/
+# --- Main Execution Logic ---
 
-# install TPM〔Tmux Plugin Manager〕
-git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm
-~/.tmux/plugins/tpm/bin/install_plugins
-mkdir -p ~/.tmux/scripts
-cp $PWD/tmux_scripts/* ~/.tmux/scripts/
+main() {
+    local gnome_enabled="false"
+    
+    # Argument parsing
+    if [ $# -eq 0 ]; then
+        echo "ERROR: Missing required argument. Use --gnome 'true' or 'false'." >&2
+        exit 1
+    fi
+    
+    # Simple argument parsing for --gnome
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --gnome)
+                gnome_enabled="$2"
+                shift 2
+                ;;
+            -h|--help)
+                echo "This script sets up a development environment with configurations for tmux, zsh, bash, and optionally GNOME Terminal."
+                echo "Usage: $0 --gnome 'true'|'false'"
+                exit 0
+                ;;
+            *)
+                echo "ERROR: Unrecognized option: $1" >&2
+                exit 1
+                ;;
+        esac
+    done
 
+    # --- Execute Setup Tasks ---
+    install_packages
+    deploy_dotfiles
+    setup_zsh
+
+    if [ "$gnome_enabled" = "true" ]; then
+        setup_gnome
+    else
+        echo "INFO: Skipping GNOME Terminal setup."
+    fi
+
+    setup_tmux
+    update_hosts_file
+
+    echo "----------------------------------------------------"
+    echo "SUCCESS: System setup and configuration is complete!"
+    echo "Please restart your terminal to apply all changes."
+    echo "----------------------------------------------------"
+}
+
+# Pass all script arguments to the main function
+main "$@"
 git reset --hard
-
-if [ "$operator" != "root" ]; then
-    sudo cp $PWD/hosts $PWD/hosts.new
-    sudo sed -i "s/#127.0.1.1 # revise to  your loscalhost hostname/127.0.0.1 $HOSTNAME/" $PWD/hosts.new
-    sudo cp -rf $PWD/hosts.new /etc/hosts
-    sudo rm -rf $PWD/hosts.new
-else
-    cp $PWD/hosts $PWD/hosts.new
-    sed -i "s/#127.0.1.1 # revise to  your loscalhost hostname/127.0.0.1 $HOSTNAME/" $PWD/hosts.new
-    cp -rf $PWD/hosts.new /etc/hosts
-    rm -rf $PWD/hosts.new
-fi
-
-echo "Finish!!!!!!!!!!!!!!!!!!!!"

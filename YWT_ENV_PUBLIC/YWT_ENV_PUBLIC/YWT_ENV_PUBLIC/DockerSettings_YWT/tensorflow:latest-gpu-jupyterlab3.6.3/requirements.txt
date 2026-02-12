@@ -1,0 +1,17 @@
+jupyterlab==3.6.3
+jupyterlab-vim
+ipython
+ipython-autotime
+ipympl
+pylint
+flake8
+pep8-naming
+pycodestyle_magic
+isort
+tqdm
+matplotlib
+seaborn
+statsmodels
+pandas
+scikit-learn
+dynamic-yaml
