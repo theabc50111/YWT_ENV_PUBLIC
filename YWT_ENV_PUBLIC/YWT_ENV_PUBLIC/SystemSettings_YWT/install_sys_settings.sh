@@ -14,6 +14,51 @@ run_as_root() {
     fi
 }
 
+# Clones a repo or moves a local folder.
+# Arguments:
+#   $1: can_git_clone_enabled (string: "true" or "false")
+#   $2: repo_url (used for cloning)
+#   $3: local_source_path (Full path to the local source directory or file to move)
+#   $4: destination_path
+resource_get() {
+    local can_git_clone_enabled="$1"
+    local repo_url="$2"
+    local local_source_path="$3" # Full path to the local source directory or file
+    local destination_path="$4"  # Full path to the desired destination directory or file
+
+    if [ "$can_git_clone_enabled" = "true" ]; then
+        echo "INFO: Cloning '$repo_url'..."
+        git clone --depth 1 "$repo_url" "$destination_path"
+    else
+        if [ -d "$local_source_path" ]; then
+            echo "INFO: Moving contents from local directory '$local_source_path' to '$destination_path'..."
+            # Create destination directory if it doesn't exist
+            mkdir -p "$destination_path"
+            
+            # Move the *contents* of local_source_path into destination_path
+            # Use nullglob to prevent 'mv: cannot stat .../*' error if source directory is empty
+            shopt -s nullglob
+            local files_to_move=("$local_source_path"/*)
+            shopt -u nullglob
+
+            if [ ${#files_to_move[@]} -gt 0 ]; then
+                mv "$local_source_path"/* "$destination_path/"
+            else
+                echo "WARNING: Local source directory '$local_source_path' is empty. No files to move." >&2
+            fi
+
+            # Remove the now empty source directory, or use rm -rf as a fallback for non-empty directories
+            rmdir "$local_source_path" || rm -rf "$local_source_path"
+        elif [ -f "$local_source_path" ]; then
+            echo "INFO: Moving local file '$local_source_path' to '$destination_path'..."
+            mkdir -p "$(dirname "$destination_path")"
+            mv "$local_source_path" "$destination_path"
+        else
+            echo "WARNING: Local resource '$local_source_path' not found. Skipping." >&2
+        fi
+    fi
+}
+
 # --- Task-specific Functions ---
 
 # Consolidates all package installations.
@@ -32,34 +77,39 @@ install_packages() {
 
 # Sets up Zsh, Oh My Zsh, and plugins.
 setup_zsh() {
+    local can_git_clone_enabled="$1"
     echo "INFO: Setting Zsh as the default shell..."
     chsh -s "$(which zsh)"
 
     echo "INFO: Installing Oh-My-Zsh..."
-    if [ -d ~/.oh-my-zsh ]; then
-        rm -rf ~/.oh-my-zsh
+    if [ -d "$HOME/.oh-my-zsh" ]; then
+        rm -rf "$HOME/.oh-my-zsh"
     fi
     sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
 
-    echo "INFO: Installing Zsh plugins..."
-    local custom_plugins_dir=${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins
-    git clone https://github.com/zsh-users/zsh-completions "${custom_plugins_dir}/zsh-completions"
-    git clone https://github.com/zsh-users/zsh-autosuggestions.git "${custom_plugins_dir}/zsh-autosuggestions"
-    git clone https://github.com/zsh-users/zsh-syntax-highlighting.git "${custom_plugins_dir}/zsh-syntax-highlighting"
+    echo "INFO: Getting Zsh plugins..."
+    local custom_plugins_dir="${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/plugins"
+    resource_get "$can_git_clone_enabled" "https://github.com/zsh-users/zsh-completions.git" "./pkgs/zsh-completions" "${custom_plugins_dir}/zsh-completions"
+    resource_get "$can_git_clone_enabled" "https://github.com/zsh-users/zsh-autosuggestions.git" "./pkgs/zsh-autosuggestions" "${custom_plugins_dir}/zsh-autosuggestions"
+    resource_get "$can_git_clone_enabled" "https://github.com/zsh-users/zsh-syntax-highlighting.git" "./pkgs/zsh-syntax-highlighting" "${custom_plugins_dir}/zsh-syntax-highlighting"
 
-    echo "INFO: Installing Dracula theme for zsh-syntax-highlighting..."
+    echo "INFO: Getting Dracula theme for zsh-syntax-highlighting..."
     local dracula_clone_dir="zsh-syntax-highlighting-dracula"
-    git clone https://github.com/dracula/zsh-syntax-highlighting.git "$dracula_clone_dir"
-    # Safely add theme to .zshrc if not already present
-    if ! grep -q 'Dracula Theme (for zsh-syntax-highlighting)' ./.zshrc; then
-        sed -i '61 r ./'"$dracula_clone_dir"'/zsh-syntax-highlighting.sh' ./.zshrc
+    resource_get "$can_git_clone_enabled" "https://github.com/dracula/zsh-syntax-highlighting.git" "./pkgs/zsh-syntax-highlighting-dracula" "$dracula_clone_dir"
+
+    if [ -f "./$dracula_clone_dir/zsh-syntax-highlighting.sh" ]; then
+        # Safely add theme to .zshrc if not already present
+        if ! grep -q 'zsh-syntax-highlighting.sh' "$HOME/.zshrc"; then
+            sed -i '61 r ./'"$dracula_clone_dir"'/zsh-syntax-highlighting.sh' "$HOME/.zshrc"
+        fi
+        rm -rf "$dracula_clone_dir"
     fi
-    rm -rf "$dracula_clone_dir"
     echo "SUCCESS: Zsh setup is complete."
 }
 
 # Handles all GNOME-related setup.
 setup_gnome() {
+    local can_git_clone_enabled="$1"
     echo "INFO: Starting GNOME Terminal setup..."
     # Check GNOME version before proceeding
     local gnome_ver
@@ -78,12 +128,14 @@ setup_gnome() {
     # shellcheck source=./create_gnome_terminal_profile.sh
     source "$PWD/create_gnome_terminal_profile.sh" "$profile_name"
 
-    echo "INFO: Installing Dracula theme for GNOME Terminal..."
-    git clone https://github.com/dracula/gnome-terminal
-    ./gnome-terminal/install.sh --scheme Dracula --profile "$profile_name" --install-dircolors
-    
-    # Clean up
-    rm -rf gnome-terminal dircolors ~/.dir_colors/dircolors.old
+    echo "INFO: Getting Dracula theme for GNOME Terminal..."
+    resource_get "$can_git_clone_enabled" "https://github.com/dracula/gnome-terminal.git" "./pkgs/gnome-terminal" "gnome-terminal"
+
+    if [ -d "./gnome-terminal" ]; then
+        ./gnome-terminal/install.sh --scheme Dracula --profile "$profile_name" --install-dircolors
+        # Clean up
+        rm -rf gnome-terminal dircolors "$HOME/.dir_colors/dircolors.old"
+    fi
     echo "SUCCESS: GNOME Terminal setup is complete."
 }
 
@@ -96,17 +148,20 @@ deploy_dotfiles() {
 
 # Sets up Tmux and its plugin manager.
 setup_tmux() {
-    echo "INFO: Installing Tmux Plugin Manager (TPM)..."
-    if [ ! -d ~/.tmux/plugins/tpm ]; then
-        git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm
+    local can_git_clone_enabled="$1"
+    echo "INFO: Getting Tmux Plugin Manager (TPM)..."
+    if [ ! -d "$HOME/.tmux/plugins/tpm" ]; then
+        resource_get "$can_git_clone_enabled" "https://github.com/tmux-plugins/tpm.git" "./pkgs/tpm" "$HOME/.tmux/plugins/tpm"
     fi
     
-    echo "INFO: Installing Tmux plugins..."
-    ~/.tmux/plugins/tpm/bin/install_plugins
+    if [ -f "$HOME/.tmux/plugins/tpm/bin/install_plugins" ]; then
+        echo "INFO: Installing Tmux plugins..."
+        "$HOME/.tmux/plugins/tpm/bin/install_plugins"
+    fi
 
     echo "INFO: Copying Tmux scripts..."
-    mkdir -p ~/.tmux/scripts
-    cp -f "$PWD/tmux_scripts/"* ~/.tmux/scripts/
+    mkdir -p "$HOME/.tmux/scripts"
+    cp -f "$PWD/tmux_scripts/"* "$HOME/.tmux/scripts/"
     echo "SUCCESS: Tmux setup is complete."
 }
 
@@ -130,24 +185,23 @@ update_hosts_file() {
 # --- Main Execution Logic ---
 
 main() {
-    local gnome_enabled="false"
-    
-    # Argument parsing
-    if [ $# -eq 0 ]; then
-        echo "ERROR: Missing required argument. Use --gnome 'true' or 'false'." >&2
-        exit 1
-    fi
-    
-    # Simple argument parsing for --gnome
+    local gnome_enabled="" # Required, so no default value
+    local can_git_clone_enabled="" # Required, so no default value
+
+    # Simple argument parsing
     while [[ $# -gt 0 ]]; do
         case "$1" in
             --gnome)
                 gnome_enabled="$2"
                 shift 2
                 ;;
+            --can-git-clone)
+                can_git_clone_enabled="$2"
+                shift 2 # Argument takes a value, so shift 2
+                ;;
             -h|--help)
                 echo "This script sets up a development environment with configurations for tmux, zsh, bash, and optionally GNOME Terminal."
-                echo "Usage: $0 --gnome 'true'|'false'"
+                echo "Usage: $0 --gnome <true|false> --can-git-clone <true|false>"
                 exit 0
                 ;;
             *)
@@ -157,15 +211,27 @@ main() {
         esac
     done
 
+    # Verify that the required argument was provided
+    if [ -z "$can_git_clone_enabled" ]; then
+        echo "ERROR: --can-git-clone is a required argument." >&2
+        echo "Usage: $0 --can-git-clone <true|false>"
+        exit 1
+    fi
+    if [ -z "$gnome_enabled" ]; then
+        echo "ERROR: --gnome is a required arguments." >&2
+        echo "Usage: $0 --gnome <true|false>"
+        exit 1
+    fi
+
     # --- Execute Setup Tasks ---
     install_packages
     if [ "$gnome_enabled" = "true" ]; then
-        setup_gnome
+        setup_gnome "$can_git_clone_enabled"
     else
         echo "INFO: Skipping GNOME Terminal setup."
     fi
-    setup_zsh
-    setup_tmux
+    setup_zsh "$can_git_clone_enabled"
+    setup_tmux "$can_git_clone_enabled"
     deploy_dotfiles
     update_hosts_file
 
@@ -177,4 +243,3 @@ main() {
 
 # Pass all script arguments to the main function
 main "$@"
-git reset --hard
