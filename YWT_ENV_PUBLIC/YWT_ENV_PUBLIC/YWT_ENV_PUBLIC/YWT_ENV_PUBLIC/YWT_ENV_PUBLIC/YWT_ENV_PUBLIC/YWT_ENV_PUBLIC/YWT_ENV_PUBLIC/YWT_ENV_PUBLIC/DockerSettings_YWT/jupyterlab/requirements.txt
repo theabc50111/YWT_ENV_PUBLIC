@@ -1,0 +1,17 @@
+jupyterlab
+jupyterlab-vim
+ipython
+ipython-autotime
+ipympl
+python-lsp-server[all]
+pylint
+flake8
+flake8-quotes
+pep8-naming
+pycodestyle_magic
+isort
+openpyxl
+visidata
+csvkit
+black
+tabulate[widechars]

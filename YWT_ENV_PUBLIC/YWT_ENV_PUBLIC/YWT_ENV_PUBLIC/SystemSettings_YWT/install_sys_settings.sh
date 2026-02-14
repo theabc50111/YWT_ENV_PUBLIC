@@ -98,9 +98,9 @@ setup_zsh() {
     resource_get "$can_git_clone_enabled" "https://github.com/dracula/zsh-syntax-highlighting.git" "./pkgs/zsh-syntax-highlighting-dracula" "$dracula_clone_dir"
 
     if [ -f "./$dracula_clone_dir/zsh-syntax-highlighting.sh" ]; then
-        # Safely add theme to .zshrc if not already present
-        if ! grep -q 'zsh-syntax-highlighting.sh' "$HOME/.zshrc"; then
-            sed -i '61 r ./'"$dracula_clone_dir"'/zsh-syntax-highlighting.sh' "$HOME/.zshrc"
+        # Safely add theme to the local .zshrc if not already present
+        if ! grep -q 'zsh-syntax-highlighting.sh' ./.zshrc; then
+            sed -i '61 r ./'"$dracula_clone_dir"'/zsh-syntax-highlighting.sh' ./.zshrc
         fi
         rm -rf "$dracula_clone_dir"
     fi
@@ -231,8 +231,8 @@ main() {
         echo "INFO: Skipping GNOME Terminal setup."
     fi
     setup_zsh "$can_git_clone_enabled"
-    setup_tmux "$can_git_clone_enabled"
     deploy_dotfiles
+    setup_tmux "$can_git_clone_enabled"
     update_hosts_file
 
     echo "----------------------------------------------------"
