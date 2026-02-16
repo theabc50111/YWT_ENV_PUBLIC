@@ -3,9 +3,9 @@
 set -u # check if all variables have been set
 
 LONG_ARGUMENT_LIST=(
-  "install_cscope:"  # `:` means require arguments
-  "install_ctags:"
-  "install_nodejs:"
+  "install-cscope:"  # `:` means require arguments
+  "install-ctags:"
+  "install-nodejs:"
   "help"
 )
 
@@ -32,26 +32,26 @@ eval set --$opts
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --install_cscope)
+    --install-cscope)
       install_cscope="$2" # Note: In order to handle the argument containing space, the quotes around '$2': they are essential!
       shift 2 # The 'shift' eats a commandline argument, i.e. converts $1=a, $2=b, $3=c, $4=d into $1=b, $2=c, $3=d. shift 2 moves it all the way to $1=c, $2=d. It's done since that particular branch uses an argument, so it has to remove two things from the list (the -r and the argument following it) not just one.
       ;;
 
-    --install_ctags)
+    --install-ctags)
       install_ctags="$2"
       shift 2
       ;;
 
-    --install_nodejs)
+    --install-nodejs)
       install_nodejs="$2"
       shift 2
       ;;
 
     -h|--help)
         echo "This script setting for vim"
-        echo "--install_cscope takes 'true' or 'false'"
-        echo "--install_ctags takes 'true' or 'false'"
-        echo "--install_nodejs takes 'true' or 'false'"
+        echo "--install-cscope takes 'true' or 'false'"
+        echo "--install-ctags takes 'true' or 'false'"
+        echo "--install-nodejs takes 'true' or 'false'"
         exit 0
         ;;
 

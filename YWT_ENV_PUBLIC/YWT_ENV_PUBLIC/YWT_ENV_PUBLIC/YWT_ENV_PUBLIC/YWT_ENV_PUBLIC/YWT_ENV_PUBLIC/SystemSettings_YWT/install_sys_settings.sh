@@ -51,8 +51,8 @@ setup_zsh() {
     local dracula_clone_dir="zsh-syntax-highlighting-dracula"
     git clone https://github.com/dracula/zsh-syntax-highlighting.git "$dracula_clone_dir"
     # Safely add theme to .zshrc if not already present
-    if ! grep -q "zsh-syntax-highlighting.sh" ~/.zshrc; then
-        sed -i '61 r ./'"$dracula_clone_dir"'/zsh-syntax-highlighting.sh' ~/.zshrc
+    if ! grep -q 'Dracula Theme (for zsh-syntax-highlighting)' ./.zshrc; then
+        sed -i '61 r ./'"$dracula_clone_dir"'/zsh-syntax-highlighting.sh' ./.zshrc
     fi
     rm -rf "$dracula_clone_dir"
     echo "SUCCESS: Zsh setup is complete."
@@ -159,16 +159,14 @@ main() {
 
     # --- Execute Setup Tasks ---
     install_packages
-    deploy_dotfiles
-    setup_zsh
-
     if [ "$gnome_enabled" = "true" ]; then
         setup_gnome
     else
         echo "INFO: Skipping GNOME Terminal setup."
     fi
-
+    setup_zsh
     setup_tmux
+    deploy_dotfiles
     update_hosts_file
 
     echo "----------------------------------------------------"

@@ -37,9 +37,9 @@ resource_get() {
             
             # Move the *contents* of local_source_path into destination_path
             # Use nullglob to prevent 'mv: cannot stat .../*' error if source directory is empty
-            shopt -s nullglob
+            shopt -s nullglob dotglob # Enable nullglob and dotglob
             local files_to_move=("$local_source_path"/*)
-            shopt -u nullglob
+            shopt -u nullglob dotglob # Disable nullglob and dotglob
 
             if [ ${#files_to_move[@]} -gt 0 ]; then
                 mv "$local_source_path"/* "$destination_path/"
