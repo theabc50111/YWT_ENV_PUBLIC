@@ -154,9 +154,15 @@ setup_tmux() {
         resource_get "$can_git_clone_enabled" "https://github.com/tmux-plugins/tpm.git" "./pkgs/tpm" "$HOME/.tmux/plugins/tpm"
     fi
     
-    if [ -f "$HOME/.tmux/plugins/tpm/bin/install_plugins" ]; then
-        echo "INFO: Installing Tmux plugins..."
-        "$HOME/.tmux/plugins/tpm/bin/install_plugins"
+    # Conditionally install plugins
+    if [ "$can_git_clone_enabled" = "true" ]; then
+        if [ -f "$HOME/.tmux/plugins/tpm/bin/install_plugins" ]; then
+            echo "INFO: Installing Tmux plugins..."
+            "$HOME/.tmux/plugins/tpm/bin/install_plugins"
+        fi
+    else
+        echo "INFO: Skipping automatic Tmux plugin installation (can_git_clone_enabled is false)."
+        echo "INFO: Please ensure required Tmux plugins are manually placed in '$HOME/.tmux/plugins/'"
     fi
 
     echo "INFO: Copying Tmux scripts..."

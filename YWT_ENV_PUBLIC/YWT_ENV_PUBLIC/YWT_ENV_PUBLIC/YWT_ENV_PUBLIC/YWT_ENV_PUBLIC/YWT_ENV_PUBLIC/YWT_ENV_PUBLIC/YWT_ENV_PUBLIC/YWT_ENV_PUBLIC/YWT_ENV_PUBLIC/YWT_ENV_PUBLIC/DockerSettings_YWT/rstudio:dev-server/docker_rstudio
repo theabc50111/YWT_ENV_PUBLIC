@@ -1,0 +1,41 @@
+#! /bin/bash
+set -u
+
+execution=true;
+
+while getopts p:f:n:d:h flag
+do
+    case "${flag}" in
+        f) folder_path=${OPTARG};;
+        p) port=${OPTARG};;
+        n) container_name=${OPTARG};;
+	    d) deamon=${OPTARG};;
+        h)       
+           echo "-f : folder_path
+-p : port number of release port
+-n : container name
+-d : container run in deamon style or not
+" 
+    execution=false;;
+    esac
+done
+
+
+
+if $execution ;
+then
+    if [ -n "$deamon" ];
+    then
+        docker container run -it -d -p $port:8787 \
+        --mount type=bind,source=$folder_path,target=/home/rstudio/workspace \
+        --name $container_name -e ROOT=true -e PASSWORD=rstudio rocker/rstudio
+    else
+        docker container run -it -p $port:8787 \
+        --mount type=bind,source=$folder_path,target=/home/rstudio/workspace \
+        --name $container_name -e ROOT=true -e PASSWORD=rstudio rocker/rstudio
+    fi
+else
+    echo "When help documents show, Not execute docker"
+fi
+
+

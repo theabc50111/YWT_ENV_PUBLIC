@@ -2,9 +2,12 @@
 
 set -u # check if all variables have been set
 
+install_cscope="false"
+install_ctags="false"
+
 LONG_ARGUMENT_LIST=(
-  "install-cscope:"  # `:` means require arguments
-  "install-ctags:"
+  "install-cscope"
+  "install-ctags"
   "install-nodejs:"
   "help"
 )

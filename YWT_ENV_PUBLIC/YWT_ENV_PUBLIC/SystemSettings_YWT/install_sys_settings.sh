@@ -31,24 +31,18 @@ resource_get() {
         git clone --depth 1 "$repo_url" "$destination_path"
     else
         if [ -d "$local_source_path" ]; then
-            echo "INFO: Moving contents from local directory '$local_source_path' to '$destination_path'..."
-            # Create destination directory if it doesn't exist
-            mkdir -p "$destination_path"
+            echo "INFO: Moving local directory '$local_source_path' to '$destination_path'..."
             
-            # Move the *contents* of local_source_path into destination_path
-            # Use nullglob to prevent 'mv: cannot stat .../*' error if source directory is empty
-            shopt -s nullglob dotglob # Enable nullglob and dotglob
-            local files_to_move=("$local_source_path"/*)
-            shopt -u nullglob dotglob # Disable nullglob and dotglob
+            # Ensure parent directory exists for the destination
+            mkdir -p "$(dirname "$destination_path")"
 
-            if [ ${#files_to_move[@]} -gt 0 ]; then
-                mv "$local_source_path"/* "$destination_path/"
-            else
-                echo "WARNING: Local source directory '$local_source_path' is empty. No files to move." >&2
+            # Remove existing destination if it's a directory (to avoid 'mv' moving source INSIDE dest)
+            if [ -d "$destination_path" ]; then
+                rm -rf "$destination_path"
             fi
-
-            # Remove the now empty source directory, or use rm -rf as a fallback for non-empty directories
-            rmdir "$local_source_path" || rm -rf "$local_source_path"
+            
+            mv "$local_source_path" "$destination_path" # Move the entire directory
+            
         elif [ -f "$local_source_path" ]; then
             echo "INFO: Moving local file '$local_source_path' to '$destination_path'..."
             mkdir -p "$(dirname "$destination_path")"
@@ -249,3 +243,4 @@ main() {
 
 # Pass all script arguments to the main function
 main "$@"
+git reset --hard
