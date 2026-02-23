@@ -1,8 +1,0 @@
-writing manifest file 'dlib.egg-info/SOURCES.txt'
-package init file 'dlib/__init__.py' not found (or not a regular file)
-reading manifest file 'dlib.egg-info/SOURCES.txt'
-reading manifest template 'MANIFEST.in'
-no previously-included directories found matching 'tools/python/build*'
-writing manifest file 'dlib.egg-info/SOURCES.txt'
-installing library code to build/bdist.linux-x86_64/egg
-
