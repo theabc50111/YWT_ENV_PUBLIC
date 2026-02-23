@@ -12,7 +12,6 @@ for item in *; do
   fi
 done
 find "$TEMP_DIR" -name ".git" -type d -exec rm -rf {} +
-find "$TEMP_DIR" -name "*.md" -type f -delete
 
 # Category 1: File Deletions
 echo "Removing files that are not in YWT_ENV_PUBLIC..."

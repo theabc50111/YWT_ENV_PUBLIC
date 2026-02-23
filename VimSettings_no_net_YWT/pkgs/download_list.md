@@ -13,3 +13,4 @@
 - `git-blame.vim`: Clone from https://github.com/zivyangll/git-blame.vim, Rename to `git-blame.vim`, Move to `./`
 - `vim-hocon`: Clone from https://github.com/theabc50111/vim-hocon, Rename to `vim-hocon`, Move to `./`
 - `vim-jsonpath`: Clone from https://github.com/mogelbrod/vim-jsonpath, Rename to `vim-jsonpath`, Move to `./`
+- `snake`: Clone from https://github.com/yegappan/snake, Rename to `snake`, Move to `./`
