@@ -87,6 +87,7 @@ Plug '~/.vim/plugged/vim-airline-themes'
 Plug '~/.vim/plugged/git-blame.vim'  " For newer vim(above 9.0), you might want to use Eliot00/git-lens.vim(https://github.com/Eliot00/git-lens.vim), Plug ~/.vim/plugged/git-lens.vim
 Plug '~/.vim/plugged/vim-hocon'
 Plug '~/.vim/plugged/vim-jsonpath'
+Plug '~/.vim/plugged/snake'  " snake game for practicing hjkl, https://github.com/yegappan/snake
 call plug#end()
 
 

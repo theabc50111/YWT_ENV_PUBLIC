@@ -89,6 +89,7 @@ Plug 'DanBradbury/copilot-chat.vim'  " github/copilot.vim need nodejs
 Plug 'github/copilot.vim'
 Plug 'theabc50111/vim-hocon'
 Plug 'mogelbrod/vim-jsonpath'
+Plug 'yegappan/snake'  " snake game for practicing hjkl, https://github.com/yegappan/snake
 call plug#end()
 
 
