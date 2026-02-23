@@ -6,7 +6,11 @@ echo "Created temporary directory: $TEMP_DIR"
 
 # Copy YWT_ENV to the temporary directory
 echo "Copying YWT_ENV to temporary directory..."
-cp -r ./* "$TEMP_DIR"
+for item in *; do
+  if [ "$item" != "YWT_ENV_PUBLIC" ]; then
+    cp -r "$item" "$TEMP_DIR/"
+  fi
+done
 find "$TEMP_DIR" -name ".git" -type d -exec rm -rf {} +
 find "$TEMP_DIR" -name "*.md" -type f -delete
 
