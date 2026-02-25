@@ -1,0 +1,15 @@
+description = "Analyze staged changes and recent history"
+
+model = "gemini-2.5-flash" 
+
+allowed_commands = [
+    "git diff --cached",
+    "git log --oneline -n 10"
+]
+
+prompt = """
+1. read the results of `git diff --cached`
+2. read the results of `git log --oneline -n 10`
+3. read our recent chat history
+4. give me some candidates of commit message that follow conventional commit style(with scope and body)
+"""
