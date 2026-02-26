@@ -125,7 +125,7 @@ if [ $install_ctags = "true" ]; then
     echo "--- Ctags installation completed successfully."
 fi
 
-if [ "$install_nodejs" = "true" ] && [ "$install_offline" = "false" ]; then
+if [ "$install_nodejs" = "true" ]; then
     ./install_nodejs.sh
     echo "--- Node.js installation completed successfully."
 fi
